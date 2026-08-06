@@ -4,7 +4,7 @@ Capstone project — a system for managing store inventory and giving customers
 a smooth shopping experience, built with the MERN stack (MongoDB, Express,
 React, Node.js).
 
-## Project status (as of Aug 6)
+## Project status (as of Aug 7)
 
 This repo is being built incrementally. Check this section before starting
 work so you know what's actually finished vs. what's a stub.
@@ -19,11 +19,21 @@ work so you know what's actually finished vs. what's a stub.
 - Admin dashboard stats endpoint (total products, low-stock list, top sellers)
 - Health check endpoint (`/api/health`)
 
+### ✅ Done — Frontend (Day 2)
+- React (Vite) + Tailwind v4 setup
+- Auth context + cart context (global state, token persisted in localStorage)
+- Customer: product browse page with search + category filter
+- Customer: cart page (update quantity, remove item, checkout)
+- Customer: order history page
+- Admin: dashboard (total products, low-stock alert, top sellers)
+- Admin: product management (add/edit/delete via modal form + table)
+- Protected routes (login-required and admin-only)
+- Verified: `npm run build` succeeds, frontend + backend boot and talk to each other locally
+
 ### 🚧 Not started yet
-- Frontend (React) — customer browsing/cart/checkout UI
-- Frontend — admin dashboard UI
-- Deployment (Vercel/Render/Atlas)
-- Seed script with demo data
+- Deployment (Vercel for frontend, Render/Railway for backend, MongoDB Atlas for DB)
+- Seed script with demo data (needed before a real demo — empty product list right now)
+- Product detail page (currently browse-only, no dedicated page per product)
 
 ### 🔮 Later phase (post Aug 12 — intentionally NOT built yet, don't start these early)
 - Recommendation engine
@@ -74,6 +84,23 @@ Server runs on `http://localhost:5000` by default. Test it's alive:
 ```bash
 curl http://localhost:5000/api/health
 ```
+
+## Frontend setup
+
+```bash
+cd frontend
+npm install
+cp .env.example .env    # points VITE_API_URL at your backend
+npm run dev
+```
+
+Runs on `http://localhost:5173` by default. Make sure the backend is running
+too (see above) or API calls will fail.
+
+To create an admin account: register normally through the UI, then either
+manually set `role: "admin"` on that user in MongoDB Atlas, or register via
+API with `{ "role": "admin" }` in the body (see API reference below) — the
+signup form itself only creates customer accounts.
 
 ## API reference (current)
 
