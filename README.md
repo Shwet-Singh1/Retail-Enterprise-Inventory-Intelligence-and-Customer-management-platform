@@ -30,10 +30,21 @@ work so you know what's actually finished vs. what's a stub.
 - Protected routes (login-required and admin-only)
 - Verified: `npm run build` succeeds, frontend + backend boot and talk to each other locally
 
-### 🚧 Not started yet
-- Deployment (Vercel for frontend, Render/Railway for backend, MongoDB Atlas for DB)
-- Seed script with demo data (needed before a real demo — empty product list right now)
-- Product detail page (currently browse-only, no dedicated page per product)
+### ✅ Done — Product detail, seed data, deployment prep (Day 3)
+- Product detail page at `/products/:id` — full description, stock status,
+  quantity selector, add-to-cart (linked from product images/names on the
+  browse page)
+- `backend/seed.js` — wipes and repopulates the DB with 12 demo products
+  across 4 categories, plus a demo admin and demo customer account. Run with
+  `npm run seed` from `backend/`
+- `frontend/vercel.json` — SPA rewrite rule so deep links like `/products/:id`
+  don't 404 on Vercel
+- `backend/render.yaml` — Render Blueprint for one-step backend deploy (env
+  vars for `MONGO_URI`/`JWT_SECRET` are set manually in the dashboard, not
+  committed)
+- See "Deployment" section below for the actual deploy steps (still needs to
+  be run once — an Atlas cluster, Vercel project, and Render service all need
+  to be created under your own accounts)
 
 ### 🔮 Later phase (post Aug 12 — intentionally NOT built yet, don't start these early)
 - Recommendation engine
@@ -85,6 +96,21 @@ Server runs on `http://localhost:5000` by default. Test it's alive:
 curl http://localhost:5000/api/health
 ```
 
+### Seeding demo data
+
+The product list is empty until you seed it. With `.env` filled in:
+```bash
+npm run seed
+```
+This wipes existing products (and any prior demo accounts) and inserts 12
+demo products plus:
+| Role     | Email                    | Password      |
+| -------- | ------------------------ | ------------- |
+| Admin    | admin@retaildemo.com     | admin123      |
+| Customer | customer@retaildemo.com  | customer123   |
+
+Change or delete these before showing this to anyone outside the team.
+
 ## Frontend setup
 
 ```bash
@@ -101,6 +127,37 @@ To create an admin account: register normally through the UI, then either
 manually set `role: "admin"` on that user in MongoDB Atlas, or register via
 API with `{ "role": "admin" }` in the body (see API reference below) — the
 signup form itself only creates customer accounts.
+
+## Deployment
+
+Three pieces to stand up, in this order:
+
+**1. Database — MongoDB Atlas**
+- Create a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas)
+- Add a database user and allow access from anywhere (`0.0.0.0/0`) for now
+- Copy the connection string — this is your `MONGO_URI`
+
+**2. Backend — Render (or Railway)**
+- New Web Service → point at this repo → root directory `backend`
+- Build command `npm install`, start command `npm start`
+  (or just use `backend/render.yaml` as a Blueprint if using Render)
+- Set env vars in the dashboard: `MONGO_URI` (from step 1), `JWT_SECRET`
+  (any long random string), `JWT_EXPIRES_IN=7d`
+- Once live, note the URL (e.g. `https://retail-system-backend.onrender.com`)
+  and confirm `/api/health` responds
+- Run `npm run seed` once against this deployed backend's env (or seed the
+  Atlas DB directly by running the script locally with `.env` pointed at the
+  Atlas `MONGO_URI`) so the live site isn't empty
+
+**3. Frontend — Vercel**
+- New Project → point at this repo → root directory `frontend`
+- Framework preset: Vite
+- Env var: `VITE_API_URL` = `<your Render backend URL>/api`
+- `frontend/vercel.json` is already in the repo so client-side routes like
+  `/products/:id` don't 404 on refresh
+
+Free tiers on Render spin down after inactivity, so the first request after
+idle can take ~30s to wake up — worth mentioning if demoing live.
 
 ## API reference (current)
 

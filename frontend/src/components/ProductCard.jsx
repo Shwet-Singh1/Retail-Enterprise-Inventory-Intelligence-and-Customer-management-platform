@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
@@ -26,19 +27,23 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-      <div className="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
+      <Link to={`/products/${product._id}`} className="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden">
         {product.imageUrl ? (
           <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
         ) : (
           <span className="text-slate-400 text-sm">No image</span>
         )}
-      </div>
+      </Link>
 
       <div className="p-4 flex flex-col flex-1">
         <span className="text-xs text-brand font-medium uppercase tracking-wide">
           {product.category}
         </span>
-        <h3 className="font-semibold text-slate-900 mt-1 line-clamp-2">{product.name}</h3>
+        <Link to={`/products/${product._id}`}>
+          <h3 className="font-semibold text-slate-900 mt-1 line-clamp-2 hover:text-brand transition-colors">
+            {product.name}
+          </h3>
+        </Link>
 
         <div className="mt-2 flex items-center justify-between">
           <span className="text-lg font-bold text-slate-900">₹{product.price.toFixed(2)}</span>
