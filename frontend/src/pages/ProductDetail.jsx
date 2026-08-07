@@ -61,14 +61,27 @@ export default function ProductDetail() {
   };
 
   if (loading) {
-    return <div className="max-w-6xl mx-auto px-4 py-16 text-center text-slate-500">Loading product...</div>;
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-pulse">
+          <div className="aspect-square bg-line/50 rounded-lg" />
+          <div className="space-y-3">
+            <div className="h-3 w-20 bg-line/50 rounded" />
+            <div className="h-7 w-3/4 bg-line/50 rounded" />
+            <div className="h-6 w-32 bg-line/50 rounded" />
+            <div className="h-20 w-full bg-line/30 rounded" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-16 text-center">
-        <p className="text-red-600 mb-4">{error}</p>
-        <Link to="/" className="text-brand text-sm font-medium hover:underline">
+        <p className="font-display text-lg text-ink mb-2">Couldn't load this product</p>
+        <p className="text-brick text-sm mb-4">{error}</p>
+        <Link to="/" className="text-brand-dark text-sm font-medium hover:underline">
           &larr; Back to shop
         </Link>
       </div>
@@ -80,57 +93,69 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <Link to="/" className="text-sm text-slate-500 hover:text-slate-700 inline-block mb-6">
+      <Link to="/" className="text-sm text-ink-muted hover:text-ink inline-block mb-6 transition-colors">
         &larr; Back to shop
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="aspect-square bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="relative aspect-square bg-white border border-line rounded-lg flex items-center justify-center overflow-hidden">
           {product.imageUrl ? (
             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-slate-400 text-sm">No image</span>
+            <span className="text-ink-muted text-sm font-mono">no image</span>
+          )}
+
+          {(isOutOfStock || isLowStock) && (
+            <span
+              className={`stamp absolute top-3 right-3 bg-white/90 ${
+                isOutOfStock ? "text-brick" : "text-brand-dark"
+              }`}
+            >
+              {isOutOfStock ? "Sold out" : "Low stock"}
+            </span>
           )}
         </div>
 
         <div className="flex flex-col">
-          <span className="text-xs text-brand font-medium uppercase tracking-wide">
+          <span className="font-mono text-xs text-brand-dark uppercase tracking-wider">
             {product.category}
           </span>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">{product.name}</h1>
+          <h1 className="font-display text-3xl font-semibold text-ink mt-2">{product.name}</h1>
 
-          {product.sku && <p className="text-xs text-slate-400 mt-1">SKU: {product.sku}</p>}
+          {product.sku && (
+            <p className="font-mono text-xs text-ink-muted mt-2">SKU {product.sku}</p>
+          )}
 
-          <div className="mt-4 flex items-center gap-3">
-            <span className="text-2xl font-bold text-slate-900">₹{product.price.toFixed(2)}</span>
+          <div className="mt-5 flex items-center gap-3">
+            <span className="font-mono text-3xl font-semibold text-ink">₹{product.price.toFixed(2)}</span>
             {isOutOfStock ? (
-              <span className="text-sm text-red-600 font-medium">Out of stock</span>
+              <span className="text-sm text-brick font-medium">Out of stock</span>
             ) : isLowStock ? (
-              <span className="text-sm text-amber-600 font-medium">Only {product.stock} left</span>
+              <span className="text-sm text-brand-dark font-medium">Only {product.stock} left</span>
             ) : (
-              <span className="text-sm text-slate-500">In stock ({product.stock} available)</span>
+              <span className="text-sm text-pine font-medium">In stock &middot; {product.stock} available</span>
             )}
           </div>
 
           {product.description && (
-            <p className="text-slate-600 mt-4 leading-relaxed">{product.description}</p>
+            <p className="text-ink-muted mt-5 leading-relaxed">{product.description}</p>
           )}
 
           {user ? (
-            <div className="mt-6 flex items-center gap-3">
-              <div className="flex items-center border border-slate-300 rounded-lg">
+            <div className="mt-8 flex items-center gap-3">
+              <div className="flex items-center border border-line rounded-lg bg-white">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={isOutOfStock}
-                  className="px-3 py-2 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed rounded-l-lg"
+                  className="px-3 py-2 text-ink-muted hover:bg-paper disabled:opacity-40 disabled:cursor-not-allowed rounded-l-lg font-mono"
                 >
                   −
                 </button>
-                <span className="px-4 text-sm font-medium">{quantity}</span>
+                <span className="px-4 text-sm font-mono font-medium">{quantity}</span>
                 <button
                   onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
                   disabled={isOutOfStock}
-                  className="px-3 py-2 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed rounded-r-lg"
+                  className="px-3 py-2 text-ink-muted hover:bg-paper disabled:opacity-40 disabled:cursor-not-allowed rounded-r-lg font-mono"
                 >
                   +
                 </button>
@@ -139,15 +164,15 @@ export default function ProductDetail() {
               <button
                 onClick={handleAdd}
                 disabled={isOutOfStock || adding}
-                className="flex-1 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+                className="flex-1 bg-ink hover:bg-black disabled:bg-line disabled:text-ink-muted disabled:cursor-not-allowed text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
               >
-                {isOutOfStock ? "Unavailable" : added ? "Added ✓" : adding ? "Adding..." : "Add to Cart"}
+                {isOutOfStock ? "Unavailable" : added ? "Added ✓" : adding ? "Adding..." : "Add to cart"}
               </button>
             </div>
           ) : (
             <a
               href="/login"
-              className="mt-6 block text-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2.5 rounded-lg transition-colors"
+              className="mt-8 block text-center bg-paper hover:bg-line border border-line text-ink text-sm font-medium py-2.5 rounded-lg transition-colors"
             >
               Login to buy
             </a>

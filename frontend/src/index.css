@@ -1,14 +1,83 @@
 @import "tailwindcss";
 
+/*
+  Design system — "stock tag" identity.
+  Grounded in the subject: this is an inventory-driven store, so the palette
+  and type borrow from real retail signage — price tags, ink stamps, ledger
+  digits — instead of a generic SaaS look.
+
+  Color:
+    ink        #1B1B1F  primary text, nav surface
+    ink-muted  #6B6559  secondary text
+    paper      #FAF7F1  page background
+    line       #E4DFD2  borders, dividers
+    brand      #C98A1B  accent — price-tag ochre
+    brand-dark #A8710F  accent hover/active
+    pine       #2F6F52  in-stock / success
+    brick      #B23A2E  out-of-stock / danger
+
+  Type:
+    Display — Fraunces (headings, used with restraint)
+    Body    — Inter
+    Mono    — IBM Plex Mono (prices, stock counts, SKUs, order IDs)
+*/
+
 @theme {
-  --color-brand: #16a34a;
-  --color-brand-dark: #15803d;
-  --color-surface: #0f172a;
+  --color-brand: #c98a1b;
+  --color-brand-dark: #a8710f;
+  --color-surface: #1b1b1f;
+
+  --color-ink: #1b1b1f;
+  --color-ink-muted: #6b6559;
+  --color-paper: #faf7f1;
+  --color-line: #e4dfd2;
+  --color-pine: #2f6f52;
+  --color-pine-light: #eaf3ee;
+  --color-brick: #b23a2e;
+  --color-brick-light: #fbeceb;
+  --color-brand-light: #faf1de;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Stock-status stamp — the signature element, reused on product cards,
+   the detail page, cart, and the admin table so stock health always
+   reads the same way across the app. */
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border: 1.5px dashed currentColor;
+  border-radius: 3px;
+  display: inline-block;
+  transform: rotate(-2deg);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

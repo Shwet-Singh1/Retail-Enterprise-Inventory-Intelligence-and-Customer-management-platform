@@ -13,9 +13,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-slate-900 text-white sticky top-0 z-10 shadow-md">
+    <nav className="bg-ink text-white sticky top-0 z-10 border-b border-black/20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="text-lg font-bold tracking-tight">
+        <Link to="/" className="font-display text-lg font-semibold tracking-tight flex items-baseline gap-0.5">
           Retail<span className="text-brand">Store</span>
         </Link>
 
@@ -40,7 +40,7 @@ export default function Navbar() {
             <Link to="/cart" className="relative hover:text-brand transition-colors">
               Cart
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-3 bg-brand text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2.5 -right-3.5 bg-brand text-ink font-mono text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                   {cartCount}
                 </span>
               )}
@@ -49,10 +49,10 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-slate-400">Hi, {user.name.split(" ")[0]}</span>
+              <span className="text-white/50 hidden sm:inline">Hi, {user.name.split(" ")[0]}</span>
               <button
                 onClick={handleLogout}
-                className="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-md transition-colors"
+                className="bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-md transition-colors"
               >
                 Logout
               </button>
@@ -64,7 +64,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="bg-brand hover:bg-brand-dark px-3 py-1.5 rounded-md transition-colors"
+                className="bg-brand hover:bg-brand-dark text-ink font-medium px-3 py-1.5 rounded-md transition-colors"
               >
                 Sign up
               </Link>
