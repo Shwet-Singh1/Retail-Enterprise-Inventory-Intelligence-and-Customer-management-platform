@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import api from "../../api/axios";
+import AdminNav from "../../components/AdminNav";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -19,17 +19,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-        <div>
-          <p className="font-mono text-xs text-brand-dark uppercase tracking-wider mb-1">Admin</p>
-          <h1 className="font-display text-2xl font-semibold text-ink">Dashboard</h1>
-        </div>
-        <Link
-          to="/admin/products"
-          className="bg-ink hover:bg-black text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          Manage products
-        </Link>
+      <AdminNav />
+      <div className="mb-6">
+        <p className="font-mono text-xs text-brand-dark uppercase tracking-wider mb-1">Admin</p>
+        <h1 className="font-display text-2xl font-semibold text-ink">Dashboard</h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">

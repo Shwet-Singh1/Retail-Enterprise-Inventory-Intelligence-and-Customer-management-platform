@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
+import AdminNav from "../../components/AdminNav";
 
 const EMPTY_FORM = {
   name: "",
@@ -96,6 +97,7 @@ export default function AdminProducts() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <AdminNav />
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <div>
           <p className="font-mono text-xs text-brand-dark uppercase tracking-wider mb-1">Admin</p>
