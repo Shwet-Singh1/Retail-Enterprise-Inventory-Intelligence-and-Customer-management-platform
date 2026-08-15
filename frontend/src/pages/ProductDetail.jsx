@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import StarRating from "../components/StarRating";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -15,6 +16,15 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +57,33 @@ export default function ProductDetail() {
     };
   }, [id]);
 
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const res = await api.get(`/products/${id}/reviews`);
+      setReviews(res.data.reviews);
+      setAverageRating(res.data.averageRating);
+      setReviewCount(res.data.reviewCount);
+
+      if (user) {
+        const mine = res.data.reviews.find((r) => r.user?._id === user._id);
+        if (mine) {
+          setMyRating(mine.rating);
+          setMyComment(mine.comment);
+        }
+      }
+    } catch {
+      // Reviews are non-critical - fail quietly, section just shows empty
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user]);
+
   const handleAdd = async () => {
     setAdding(true);
     try {
@@ -57,6 +94,24 @@ export default function ProductDetail() {
       alert(err.response?.data?.message || "Could not add to cart");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    setReviewError("");
+    if (myRating < 1) {
+      setReviewError("Pick a star rating first.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await api.post(`/products/${id}/reviews`, { rating: myRating, comment: myComment });
+      await fetchReviews();
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Could not submit review");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -90,6 +145,7 @@ export default function ProductDetail() {
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = !isOutOfStock && product.stock <= product.lowStockThreshold;
+  const myExistingReview = user && reviews.find((r) => r.user?._id === user._id);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -121,6 +177,21 @@ export default function ProductDetail() {
             {product.category}
           </span>
           <h1 className="font-display text-3xl font-semibold text-ink mt-2">{product.name}</h1>
+
+          {!reviewsLoading && (
+            <div className="flex items-center gap-2 mt-2">
+              {reviewCount > 0 ? (
+                <>
+                  <StarRating rating={averageRating} size="text-sm" />
+                  <span className="text-sm text-ink-muted">
+                    {averageRating} &middot; {reviewCount} review{reviewCount !== 1 ? "s" : ""}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-ink-muted">No reviews yet</span>
+              )}
+            </div>
+          )}
 
           {product.sku && (
             <p className="font-mono text-xs text-ink-muted mt-2">SKU {product.sku}</p>
@@ -176,6 +247,76 @@ export default function ProductDetail() {
             >
               Login to buy
             </a>
+          )}
+        </div>
+      </div>
+
+      {/* Reviews */}
+      <div className="mt-16 pt-10 border-t border-line grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div>
+          <h2 className="font-display text-xl font-semibold text-ink mb-4">
+            Reviews {reviewCount > 0 && <span className="text-ink-muted font-normal">({reviewCount})</span>}
+          </h2>
+
+          {reviewsLoading ? (
+            <p className="text-sm text-ink-muted">Loading reviews...</p>
+          ) : reviews.length === 0 ? (
+            <p className="text-sm text-ink-muted">No reviews yet — be the first to leave one.</p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((r) => (
+                <div key={r._id} className="border-b border-line pb-4 last:border-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-ink">{r.user?.name || "Anonymous"}</span>
+                    <span className="text-xs text-ink-muted">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <StarRating rating={r.rating} size="text-xs" />
+                  {r.comment && <p className="text-sm text-ink-muted mt-1.5">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="font-display text-base font-semibold text-ink mb-3">
+            {myExistingReview ? "Edit your review" : "Write a review"}
+          </h3>
+
+          {user ? (
+            <form onSubmit={handleSubmitReview} className="bg-white border border-line rounded-lg p-4">
+              <div className="mb-3">
+                <label className="block text-xs text-ink-muted mb-1.5">Your rating</label>
+                <StarRating rating={myRating} onRate={setMyRating} size="text-2xl" />
+              </div>
+              <div className="mb-3">
+                <label className="block text-xs text-ink-muted mb-1.5">Comment (optional)</label>
+                <textarea
+                  value={myComment}
+                  onChange={(e) => setMyComment(e.target.value)}
+                  rows={3}
+                  placeholder="What did you think?"
+                  className="w-full bg-white border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                />
+              </div>
+              {reviewError && <p className="text-brick text-sm mb-3">{reviewError}</p>}
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="bg-ink hover:bg-black disabled:bg-line disabled:text-ink-muted text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                {submittingReview ? "Saving..." : myExistingReview ? "Update review" : "Submit review"}
+              </button>
+            </form>
+          ) : (
+            <div className="bg-paper border border-dashed border-line rounded-lg p-4 text-sm text-ink-muted">
+              <a href="/login" className="text-brand-dark font-medium hover:underline">
+                Log in
+              </a>{" "}
+              to write a review.
+            </div>
           )}
         </div>
       </div>
