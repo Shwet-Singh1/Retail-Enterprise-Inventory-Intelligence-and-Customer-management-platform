@@ -30,6 +30,12 @@ export default function Navbar() {
             </Link>
           )}
 
+          {user && (
+            <Link to="/sell" className="hover:text-brand transition-colors">
+              Sell
+            </Link>
+          )}
+
           {user?.role === "admin" && (
             <Link to="/admin" className="hover:text-brand transition-colors">
               Admin

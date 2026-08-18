@@ -16,6 +16,12 @@ const EMPTY_FORM = {
 const inputClass =
   "w-full bg-white border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand";
 
+const STATUS_BADGE = {
+  approved: "bg-pine-light text-pine",
+  pending: "bg-brand-light text-brand-dark",
+  rejected: "bg-brick-light text-brick",
+};
+
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +30,14 @@ export default function AdminProducts() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [adjustingId, setAdjustingId] = useState(null);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/products");
+      // Admin sees every product regardless of approval status - including
+      // its own catalog and any customer-submitted listings
+      const res = await api.get("/products/admin/all");
       setProducts(res.data);
     } finally {
       setLoading(false);
@@ -93,6 +102,23 @@ export default function AdminProducts() {
     if (!window.confirm(`Delete "${name}"? This can't be undone.`)) return;
     await api.delete(`/products/${id}`);
     fetchProducts();
+  };
+
+  // Quick +/- stock adjust, right in the table - no need to open the full
+  // edit modal just to bump stock up after a restock delivery.
+  const adjustStock = async (product, delta) => {
+    const newStock = Math.max(0, product.stock + delta);
+    setAdjustingId(product._id);
+    setProducts((prev) => prev.map((p) => (p._id === product._id ? { ...p, stock: newStock } : p)));
+    try {
+      await api.put(`/products/${product._id}`, { stock: newStock });
+    } catch (err) {
+      // Roll back on failure
+      setProducts((prev) => prev.map((p) => (p._id === product._id ? { ...p, stock: product.stock } : p)));
+      alert(err.response?.data?.message || "Could not update stock");
+    } finally {
+      setAdjustingId(null);
+    }
   };
 
   return (
@@ -212,21 +238,52 @@ export default function AdminProducts() {
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Price</th>
                 <th className="px-4 py-3 font-medium">Stock</th>
+                <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p._id} className="border-t border-line hover:bg-paper/60 transition-colors">
-                  <td className="px-4 py-3 text-ink font-medium">{p.name}</td>
+                  <td className="px-4 py-3 text-ink font-medium">
+                    {p.name}
+                    {p.submittedBy && (
+                      <div className="text-xs text-ink-muted font-normal mt-0.5">
+                        Listed by {p.submittedBy.name}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-ink-muted">{p.category}</td>
                   <td className="px-4 py-3 text-ink font-mono">₹{p.price.toFixed(2)}</td>
                   <td className="px-4 py-3 font-mono">
-                    <span className={p.stock <= p.lowStockThreshold ? "text-brand-dark font-medium" : "text-ink-muted"}>
-                      {p.stock}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => adjustStock(p, -1)}
+                        disabled={adjustingId === p._id || p.stock <= 0}
+                        className="w-6 h-6 rounded border border-line text-ink-muted hover:bg-paper disabled:opacity-30 flex items-center justify-center"
+                      >
+                        −
+                      </button>
+                      <span className={p.stock <= p.lowStockThreshold ? "text-brand-dark font-medium w-6 text-center" : "text-ink-muted w-6 text-center"}>
+                        {p.stock}
+                      </span>
+                      <button
+                        onClick={() => adjustStock(p, 1)}
+                        disabled={adjustingId === p._id}
+                        className="w-6 h-6 rounded border border-line text-ink-muted hover:bg-paper disabled:opacity-30 flex items-center justify-center"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_BADGE[p.approvalStatus] || "bg-paper text-ink-muted"}`}
+                    >
+                      {p.approvalStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right space-x-3">
+                  <td className="px-4 py-3 text-right space-x-3 whitespace-nowrap">
                     <button onClick={() => openEditForm(p)} className="text-brand-dark hover:underline">
                       Edit
                     </button>

@@ -197,6 +197,12 @@ export default function ProductDetail() {
             <p className="font-mono text-xs text-ink-muted mt-2">SKU {product.sku}</p>
           )}
 
+          {product.submittedBy && (
+            <p className="text-xs text-ink-muted mt-1">
+              Sold by <span className="text-ink">{product.submittedBy.name}</span>
+            </p>
+          )}
+
           <div className="mt-5 flex items-center gap-3">
             <span className="font-mono text-3xl font-semibold text-ink">₹{product.price.toFixed(2)}</span>
             {isOutOfStock ? (

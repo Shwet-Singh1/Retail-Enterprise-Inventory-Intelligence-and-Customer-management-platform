@@ -45,6 +45,20 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Customer self-listing support. submittedBy is null for products added
+    // by an admin through the normal admin panel - those are auto-approved.
+    // Products a customer submits themselves start as "pending" and only
+    // show up in the public catalog once an admin approves them.
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    approvalStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "approved",
+    },
   },
   { timestamps: true }
 );

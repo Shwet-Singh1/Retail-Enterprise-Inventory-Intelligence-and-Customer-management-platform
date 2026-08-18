@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
         <h1 className="font-display text-2xl font-semibold text-ink">Dashboard</h1>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white border border-line rounded-lg p-5">
           <p className="text-sm text-ink-muted">Total products</p>
           <p className="font-mono text-2xl sm:text-3xl font-semibold text-ink mt-1">{stats.totalProducts}</p>
@@ -73,6 +74,19 @@ export default function AdminDashboard() {
             ₹{stats.totalRevenue.toFixed(0)}
           </p>
         </div>
+        <Link
+          to="/admin/listings"
+          className="bg-white border border-line rounded-lg p-5 hover:border-brand transition-colors"
+        >
+          <p className="text-sm text-ink-muted">Listings to review</p>
+          <p
+            className={`font-mono text-2xl sm:text-3xl font-semibold mt-1 ${
+              stats.pendingListingsCount > 0 ? "text-brand-dark" : "text-ink"
+            }`}
+          >
+            {stats.pendingListingsCount}
+          </p>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

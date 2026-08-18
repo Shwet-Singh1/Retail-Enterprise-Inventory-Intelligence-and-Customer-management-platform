@@ -2,11 +2,13 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 
 // @route GET /api/products
-// Public - supports ?category= & ?search= query params
+// Public - supports ?category= & ?search= query params. Only shows approved
+// listings - a customer's pending or rejected self-submitted product never
+// appears here.
 const getProducts = async (req, res) => {
   try {
     const { category, search } = req.query;
-    const filter = {};
+    const filter = { approvalStatus: "approved" };
 
     if (category) filter.category = category;
     if (search) filter.name = { $regex: search, $options: "i" };
@@ -18,11 +20,108 @@ const getProducts = async (req, res) => {
   }
 };
 
+// @route GET /api/products/admin/all
+// Admin only - every product regardless of approval status, so the admin
+// product table (and the pending-listings queue) can see everything.
+const getAllProductsAdmin = async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate("submittedBy", "name email")
+      .sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // @route GET /api/products/:id
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate("submittedBy", "name");
     if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @route POST /api/products/listings
+// Logged-in customers - submit a product to sell. Always starts "pending"
+// regardless of what the client sends, so a customer can't self-approve.
+const submitListing = async (req, res) => {
+  try {
+    const { name, description, category, price, stock, imageUrl, sku } = req.body;
+
+    const product = await Product.create({
+      name,
+      description,
+      category,
+      price,
+      stock,
+      imageUrl,
+      sku: sku || undefined,
+      submittedBy: req.user._id,
+      approvalStatus: "pending",
+    });
+
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(400).json({ message: "Invalid listing data", error: error.message });
+  }
+};
+
+// @route GET /api/products/listings/mine
+// Logged-in customers - their own submitted listings, any status
+const getMyListings = async (req, res) => {
+  try {
+    const listings = await Product.find({ submittedBy: req.user._id }).sort({ createdAt: -1 });
+    res.json(listings);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @route DELETE /api/products/listings/:id
+// Logged-in customers - can only delete their own listing
+const deleteMyListing = async (req, res) => {
+  try {
+    const product = await Product.findOne({ _id: req.params.id, submittedBy: req.user._id });
+    if (!product) return res.status(404).json({ message: "Listing not found" });
+    await product.deleteOne();
+    res.json({ message: "Listing deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @route GET /api/products/listings/pending
+// Admin only - the review queue
+const getPendingListings = async (req, res) => {
+  try {
+    const listings = await Product.find({ approvalStatus: "pending" })
+      .populate("submittedBy", "name email")
+      .sort({ createdAt: 1 });
+    res.json(listings);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @route PUT /api/products/listings/:id/review
+// Admin only - approve or reject a pending customer listing
+const reviewListing = async (req, res) => {
+  try {
+    const { decision } = req.body; // "approved" | "rejected"
+    if (!["approved", "rejected"].includes(decision)) {
+      return res.status(400).json({ message: "decision must be 'approved' or 'rejected'" });
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus: decision },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ message: "Listing not found" });
     res.json(product);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -71,12 +170,15 @@ const deleteProduct = async (req, res) => {
 // Admin only - powers the admin dashboard cards and charts
 const getDashboardStats = async (req, res) => {
   try {
-    const totalProducts = await Product.countDocuments();
+    const liveFilter = { approvalStatus: "approved" };
+    const totalProducts = await Product.countDocuments(liveFilter);
 
-    const allProducts = await Product.find();
+    const allProducts = await Product.find(liveFilter);
     const lowStockProducts = allProducts.filter((p) => p.stock <= p.lowStockThreshold);
 
-    const topSelling = await Product.find().sort({ unitsSold: -1 }).limit(5);
+    const topSelling = await Product.find(liveFilter).sort({ unitsSold: -1 }).limit(5);
+
+    const pendingListingsCount = await Product.countDocuments({ approvalStatus: "pending" });
 
     // Orders/revenue totals - cancelled orders don't count as real revenue
     const revenueMatch = { status: { $ne: "cancelled" } };
@@ -151,6 +253,7 @@ const getDashboardStats = async (req, res) => {
       totalRevenue,
       revenueByDay,
       salesByCategory,
+      pendingListingsCount,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -160,8 +263,14 @@ const getDashboardStats = async (req, res) => {
 module.exports = {
   getProducts,
   getProductById,
+  getAllProductsAdmin,
   createProduct,
   updateProduct,
   deleteProduct,
   getDashboardStats,
+  submitListing,
+  getMyListings,
+  deleteMyListing,
+  getPendingListings,
+  reviewListing,
 };

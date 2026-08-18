@@ -3,10 +3,16 @@ const router = express.Router();
 const {
   getProducts,
   getProductById,
+  getAllProductsAdmin,
   createProduct,
   updateProduct,
   deleteProduct,
   getDashboardStats,
+  submitListing,
+  getMyListings,
+  deleteMyListing,
+  getPendingListings,
+  reviewListing,
 } = require("../controllers/productController");
 const { getProductReviews, submitReview, deleteReview } = require("../controllers/reviewController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -16,6 +22,18 @@ router.get("/", getProducts);
 
 // Admin dashboard stats - must be defined BEFORE /:id to avoid route collision
 router.get("/dashboard/stats", protect, adminOnly, getDashboardStats);
+
+// Admin - every product regardless of approval status
+router.get("/admin/all", protect, adminOnly, getAllProductsAdmin);
+
+// Customer self-listing - submit a product to sell, view/delete own listings
+router.post("/listings", protect, submitListing);
+router.get("/listings/mine", protect, getMyListings);
+router.delete("/listings/:id", protect, deleteMyListing);
+
+// Admin - review queue for pending customer listings
+router.get("/listings/pending", protect, adminOnly, getPendingListings);
+router.put("/listings/:id/review", protect, adminOnly, reviewListing);
 
 router.get("/:id", getProductById);
 

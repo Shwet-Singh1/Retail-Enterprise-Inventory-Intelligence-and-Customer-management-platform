@@ -7,10 +7,12 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
+import SellItem from "./pages/SellItem";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminListings from "./pages/admin/AdminListings";
 
 function App() {
   return (
@@ -34,6 +36,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Orders />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sell"
+          element={
+            <ProtectedRoute>
+              <SellItem />
             </ProtectedRoute>
           }
         />
@@ -66,6 +76,14 @@ function App() {
           element={
             <ProtectedRoute adminOnly>
               <AdminCustomers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/listings"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminListings />
             </ProtectedRoute>
           }
         />
