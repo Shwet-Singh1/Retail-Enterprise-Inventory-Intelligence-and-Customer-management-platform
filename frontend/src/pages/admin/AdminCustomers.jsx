@@ -44,8 +44,8 @@ export default function AdminCustomers() {
       ) : error ? (
         <div className="text-brick text-sm">{error}</div>
       ) : (
-        <div className="bg-white border border-line rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-line rounded-lg overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="bg-paper text-ink-muted text-left font-mono text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>

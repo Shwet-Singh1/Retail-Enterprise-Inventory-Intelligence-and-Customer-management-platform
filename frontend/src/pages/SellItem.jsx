@@ -81,7 +81,7 @@ export default function SellItem() {
       <p className="font-mono text-xs text-brand-dark uppercase tracking-wider mb-1">Marketplace</p>
       <h1 className="font-display text-2xl font-semibold text-ink mb-1">Sell an item</h1>
       <p className="text-sm text-ink-muted mb-8">
-        Submit a product to sell on RetailStore. An admin reviews every listing before it goes live in the
+        Submit a product to sell on Nivera. An admin reviews every listing before it goes live in the
         shop.
       </p>
 

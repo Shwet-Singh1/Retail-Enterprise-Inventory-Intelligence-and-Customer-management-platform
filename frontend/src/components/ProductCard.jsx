@@ -9,6 +9,8 @@ export default function ProductCard({ product }) {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
+  const [imgError, setImgError] = useState(false);
+
   const isOutOfStock = product.stock <= 0;
   const isLowStock = !isOutOfStock && product.stock <= product.lowStockThreshold;
 
@@ -28,8 +30,14 @@ export default function ProductCard({ product }) {
   return (
     <div className="group bg-white rounded-lg border border-line overflow-hidden flex flex-col hover:shadow-[0_4px_0_0_rgba(27,27,31,0.06)] hover:-translate-y-0.5 transition-all duration-200">
       <Link to={`/products/${product._id}`} className="relative aspect-square bg-paper flex items-center justify-center overflow-hidden">
-        {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+        {product.imageUrl && !imgError ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <span className="text-ink-muted text-sm font-mono">no image</span>
         )}

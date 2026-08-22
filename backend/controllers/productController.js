@@ -13,8 +13,35 @@ const getProducts = async (req, res) => {
     if (category) filter.category = category;
     if (search) filter.name = { $regex: search, $options: "i" };
 
-    const products = await Product.find(filter).sort({ createdAt: -1 });
-    res.json(products);
+    // Pagination - defaults keep old behavior reasonable for small catalogs,
+    // caps page size so a bad ?limit= can't force a huge query
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments(filter),
+    ]);
+
+    res.json({
+      products,
+      page,
+      totalPages: Math.max(Math.ceil(total / limit), 1),
+      totalItems: total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @route GET /api/products/categories
+// Public - distinct category list across ALL approved products, independent
+// of pagination, so the Shop filter dropdown always shows every category
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct("category", { approvalStatus: "approved" });
+    res.json(categories.sort());
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -262,6 +289,7 @@ const getDashboardStats = async (req, res) => {
 
 module.exports = {
   getProducts,
+  getCategories,
   getProductById,
   getAllProductsAdmin,
   createProduct,

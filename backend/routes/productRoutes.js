@@ -13,12 +13,14 @@ const {
   deleteMyListing,
   getPendingListings,
   reviewListing,
+  getCategories,
 } = require("../controllers/productController");
 const { getProductReviews, submitReview, deleteReview } = require("../controllers/reviewController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 // Public routes
 router.get("/", getProducts);
+router.get("/categories", getCategories);
 
 // Admin dashboard stats - must be defined BEFORE /:id to avoid route collision
 router.get("/dashboard/stats", protect, adminOnly, getDashboardStats);

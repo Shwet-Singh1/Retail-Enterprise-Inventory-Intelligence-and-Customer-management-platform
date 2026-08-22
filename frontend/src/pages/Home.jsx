@@ -2,29 +2,42 @@ import { useState, useEffect } from "react";
 import api from "../api/axios";
 import ProductCard from "../components/ProductCard";
 
+const PAGE_SIZE = 12;
+
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchProducts = async () => {
+  // Category list is independent of the current page/filter, so it always
+  // shows every category even when a filter has narrowed the visible results
+  useEffect(() => {
+    api
+      .get("/products/categories")
+      .then((res) => setCategories(res.data))
+      .catch(() => {
+        /* non-critical - filter dropdown just stays empty */
+      });
+  }, []);
+
+  const fetchProducts = async (pageToFetch) => {
     setLoading(true);
     setError("");
     try {
-      const params = {};
-      if (search) params.search = search;
+      const params = { page: pageToFetch, limit: PAGE_SIZE };
+      if (search.trim()) params.search = search.trim();
       if (category) params.category = category;
       const res = await api.get("/products", { params });
-      setProducts(res.data);
-
-      // Build category list from full result set only on first unfiltered load
-      if (!category && !search) {
-        const uniqueCategories = [...new Set(res.data.map((p) => p.category))];
-        setCategories(uniqueCategories);
-      }
+      setProducts(res.data.products);
+      setTotalPages(res.data.totalPages);
+      setTotalItems(res.data.totalItems);
+      setPage(res.data.page);
     } catch (err) {
       setError("Could not load products. Is the backend running?");
     } finally {
@@ -32,18 +45,25 @@ export default function Home() {
     }
   };
 
+  // Search/category changes reset to page 1 and debounce
   useEffect(() => {
-    const timer = setTimeout(fetchProducts, 300); // debounce search
+    const timer = setTimeout(() => fetchProducts(1), 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, category]);
+
+  const goToPage = (p) => {
+    if (p < 1 || p > totalPages || p === page) return;
+    fetchProducts(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8 flex items-end justify-between flex-wrap gap-2">
         <div>
           <p className="font-mono text-xs text-brand-dark uppercase tracking-wider mb-1">
-            {products.length > 0 && !loading ? `${products.length} items` : "Catalog"}
+            {totalItems > 0 && !loading ? `${totalItems} item${totalItems === 1 ? "" : "s"}` : "Catalog"}
           </p>
           <h1 className="font-display text-3xl font-semibold text-ink">Shop</h1>
         </div>
@@ -96,11 +116,35 @@ export default function Home() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8 flex-wrap">
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-sm rounded-md border border-line bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper transition-colors"
+              >
+                Prev
+              </button>
+              <span className="font-mono text-xs text-ink-muted px-2">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={page === totalPages}
+                className="px-3 py-1.5 text-sm rounded-md border border-line bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-paper transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -29,16 +29,21 @@ export default function AdminProducts() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [adjustingId, setAdjustingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchProducts = async () => {
     setLoading(true);
+    setLoadError("");
     try {
       // Admin sees every product regardless of approval status - including
       // its own catalog and any customer-submitted listings
       const res = await api.get("/products/admin/all");
       setProducts(res.data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Could not load products.");
     } finally {
       setLoading(false);
     }
@@ -74,14 +79,26 @@ export default function AdminProducts() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSaving(true);
 
-    const payload = {
-      ...form,
-      price: Number(form.price),
-      stock: Number(form.stock),
-      lowStockThreshold: Number(form.lowStockThreshold),
-    };
+    const price = Number(form.price);
+    const stock = Number(form.stock);
+    const lowStockThreshold = form.lowStockThreshold === "" ? 10 : Number(form.lowStockThreshold);
+
+    if (Number.isNaN(price) || price < 0) {
+      setError("Price must be a number of 0 or more.");
+      return;
+    }
+    if (Number.isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+      setError("Stock must be a whole number of 0 or more.");
+      return;
+    }
+    if (Number.isNaN(lowStockThreshold) || lowStockThreshold < 0) {
+      setError("Low stock threshold must be a number of 0 or more.");
+      return;
+    }
+
+    setSaving(true);
+    const payload = { ...form, price, stock, lowStockThreshold };
 
     try {
       if (editingId) {
@@ -100,8 +117,15 @@ export default function AdminProducts() {
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This can't be undone.`)) return;
-    await api.delete(`/products/${id}`);
-    fetchProducts();
+    setDeletingId(id);
+    try {
+      await api.delete(`/products/${id}`);
+      fetchProducts();
+    } catch (err) {
+      alert(err.response?.data?.message || "Could not delete product");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Quick +/- stock adjust, right in the table - no need to open the full
@@ -170,6 +194,7 @@ export default function AdminProducts() {
                   required
                   type="number"
                   step="0.01"
+                  min="0"
                   placeholder="Price"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
@@ -178,6 +203,7 @@ export default function AdminProducts() {
                 <input
                   required
                   type="number"
+                  min="0"
                   placeholder="Stock"
                   value={form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
@@ -186,6 +212,7 @@ export default function AdminProducts() {
               </div>
               <input
                 type="number"
+                min="0"
                 placeholder="Low stock threshold (default 10)"
                 value={form.lowStockThreshold}
                 onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })}
@@ -229,9 +256,19 @@ export default function AdminProducts() {
 
       {loading ? (
         <div className="text-center text-ink-muted py-16">Loading products...</div>
+      ) : loadError ? (
+        <div className="text-center py-16 border border-dashed border-line rounded-lg">
+          <p className="text-brick text-sm mb-3">{loadError}</p>
+          <button
+            onClick={fetchProducts}
+            className="text-sm font-medium text-brand-dark hover:underline"
+          >
+            Try again
+          </button>
+        </div>
       ) : (
-        <div className="bg-white border border-line rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-line rounded-lg overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-paper text-ink-muted text-left font-mono text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
@@ -287,8 +324,12 @@ export default function AdminProducts() {
                     <button onClick={() => openEditForm(p)} className="text-brand-dark hover:underline">
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(p._id, p.name)} className="text-brick hover:underline">
-                      Delete
+                    <button
+                      onClick={() => handleDelete(p._id, p.name)}
+                      disabled={deletingId === p._id}
+                      className="text-brick hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {deletingId === p._id ? "Deleting..." : "Delete"}
                     </button>
                   </td>
                 </tr>

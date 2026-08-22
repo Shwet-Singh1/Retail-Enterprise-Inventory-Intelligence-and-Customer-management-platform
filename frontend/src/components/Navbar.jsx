@@ -21,7 +21,7 @@ export default function Navbar() {
           to={isAdmin ? "/admin" : "/"}
           className="font-display text-lg font-semibold tracking-tight flex items-baseline gap-0.5"
         >
-          Retail<span className="text-brand">Store</span>
+          Niv<span className="text-brand">era</span>
         </Link>
 
         <div className="flex items-center gap-5 text-sm">
